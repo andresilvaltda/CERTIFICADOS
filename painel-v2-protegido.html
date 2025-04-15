@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel de Certificados (Firebase Corrigido)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    .qr { width: 90px; }
+  </style>
+</head>
+
+  <body onload="verificarSenha()">
+  <script>
+    function verificarSenha() {
+      const senha = prompt("Digite a senha para acessar o painel:");
+      if (senha !== "SILVA455459") {
+        alert("Acesso negado.");
+        window.location.href = "https://andresilvaltda.github.io/CERTIFICADOS/";
+      }
+    }
+  </script>
+    
+  <div class="container">
+    <h2>🔐 Painel de Certificados (Firebase)</h2>
+    <input type="text" id="codigo" placeholder="Código do Certificado">
+    <input type="text" id="nome" placeholder="Nome do Aluno">
+    <input type="text" id="curso" placeholder="Curso Realizado">
+    <input type="date" id="data">
+    <input type="text" id="empresa" placeholder="Nome da Empresa">
+    <button id="btnSalvar">Salvar Certificado</button>
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nome</th>
+          <th>Curso</th>
+          <th>Data</th>
+          <th>Empresa</th>
+          <th>QR Code</th>
+        </tr>
+      <th>Ações</th>
+</thead>
+      <tbody id="lista"></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIXyUVNx7xv6zjD6HrHNLSxVra3GOC9l0",
+      authDomain: "certificados-a42ac.firebaseapp.com",
+      projectId: "certificados-a42ac",
+      storageBucket: "certificados-a42ac.firebasestorage.app",
+      messagingSenderId: "703312022288",
+      appId: "1:703312022288:web:49081afee8e1f00f433395",
+      measurementId: "G-Z2SWB955EQ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const colRef = collection(db, "certificados");
+
+    async function salvar() {
+      const codigo = document.getElementById("codigo").value.trim();
+      const nome = document.getElementById("nome").value.trim();
+      const curso = document.getElementById("curso").value.trim();
+      const data = document.getElementById("data").value;
+      const empresa = document.getElementById("empresa").value.trim();
+
+      if (!codigo || !nome || !curso || !data || !empresa) {
+        alert("Preencha todos os campos.");
+        return;
+      }
+
+      await addDoc(colRef, { codigo, nome, curso, data, empresa });
+      alert("Certificado salvo com sucesso!");
+      
+    listar();
+    window.excluir = async function(codigo) {
+      if (!confirm("Tem certeza que deseja excluir este certificado?")) return;
+      const snapshot = await getDocs(colRef);
+      snapshot.forEach(async (doc) => {
+        if (doc.data().codigo === codigo) {
+          await deleteDoc(doc.ref);
+          alert("Certificado excluído!");
+          listar();
+        }
+      });
+    };
+    
+    }
+
+    async function listar() {
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+      const snapshot = await getDocs(colRef);
+      snapshot.forEach(doc => {
+        const cert = doc.data();
+        const qrURL = `https://andresilvaltda.github.io/CERTIFICADOS/consulta.html?codigo=${cert.codigo}`;
+        lista.innerHTML += `
+          <tr>
+            <td>${cert.codigo}</td>
+            <td>${cert.nome}</td>
+            <td>${cert.curso}</td>
+            <td>${cert.data}</td>
+            <td>${cert.empresa}</td>
+            <td><img class="qr" src="https://quickchart.io/qr?text=${encodeURIComponent(qrURL)}" /></td>
+          <td><button onclick="excluir('${cert.codigo}')">🗑️ Excluir</button></td></tr>`;
+      });
+    }
+
+    document.getElementById("btnSalvar").addEventListener("click", salvar);
+    
+    listar();
+    window.excluir = async function(codigo) {
+      if (!confirm("Tem certeza que deseja excluir este certificado?")) return;
+      const snapshot = await getDocs(colRef);
+      snapshot.forEach(async (doc) => {
+        if (doc.data().codigo === codigo) {
+          await deleteDoc(doc.ref);
+          alert("Certificado excluído!");
+          listar();
+        }
+      });
+    };
+    
+  </script>
+</body>
+</html>
