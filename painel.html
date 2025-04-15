@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel de Certificados (Local)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px #ccc; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    .qr { width: 90px; }
+    .delete-btn { background: red; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔐 Painel Local de Certificados</h2>
+    <input type="text" id="codigo" placeholder="Código do Certificado">
+    <input type="text" id="nome" placeholder="Nome do Aluno">
+    <input type="text" id="curso" placeholder="Curso Realizado">
+    <input type="date" id="data">
+    <input type="text" id="empresa" placeholder="Nome da Empresa">
+    <button onclick="salvar()">Salvar Certificado</button>
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nome</th>
+          <th>Curso</th>
+          <th>Data</th>
+          <th>Empresa</th>
+          <th>QR Code</th>
+          <th>Excluir</th>
+        </tr>
+      </thead>
+      <tbody id="lista"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let certificados = JSON.parse(localStorage.getItem("certificados") || "{}");
+
+    function salvar() {
+      const codigo = document.getElementById("codigo").value.trim();
+      const nome = document.getElementById("nome").value.trim();
+      const curso = document.getElementById("curso").value.trim();
+      const data = document.getElementById("data").value;
+      const empresa = document.getElementById("empresa").value.trim();
+
+      if (!codigo || !nome || !curso || !data || !empresa) {
+        alert("Preencha todos os campos!");
+        return;
+      }
+
+      certificados[codigo] = { nome, curso, data, empresa };
+      localStorage.setItem("certificados", JSON.stringify(certificados));
+      listar();
+    }
+
+    function excluir(cod) {
+      if (confirm("Deseja realmente excluir o certificado?")) {
+        delete certificados[cod];
+        localStorage.setItem("certificados", JSON.stringify(certificados));
+        listar();
+      }
+    }
+
+    function listar() {
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+      for (const cod in certificados) {
+        const cert = certificados[cod];
+        const qrURL = `https://andresilvaltda.github.io/CERTIFICADOS/consulta.html?codigo=${cod}`;
+        lista.innerHTML += `
+          <tr>
+            <td>${cod}</td>
+            <td>${cert.nome}</td>
+            <td>${cert.curso}</td>
+            <td>${cert.data}</td>
+            <td>${cert.empresa}</td>
+            <td><img class="qr" src="https://quickchart.io/qr?text=${encodeURIComponent(qrURL)}" /></td>
+            <td><button class="delete-btn" onclick="excluir('${cod}')">Excluir</button></td>
+          </tr>`;
+      }
+    }
+
+    window.onload = listar;
+  </script>
+</body>
+</html>
