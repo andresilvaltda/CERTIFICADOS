@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel PRO - Certificados</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, deleteDoc, doc, addDoc
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import {
+      getAuth, signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2C2DS3ljTaThKqE_HsNdMsZ-MCJJZSfg",
+      authDomain: "amplibot-b072c.firebaseapp.com",
+      projectId: "amplibot-b072c",
+      storageBucket: "amplibot-b072c.firebasestorage.app",
+      messagingSenderId: "996057926773",
+      appId: "1:996057926773:web:69685311faf3d4ece43c3c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth();
+
+    signInWithEmailAndPassword(auth, "andresilva.ltda@bol.com.br", "SILVA2659")
+      .then(() => {
+        carregarCertificados();
+      })
+      .catch((error) => alert("Erro no login automático: " + error.message));
+
+    let certificados = [];
+
+    async function carregarCertificados() {
+      const lista = document.getElementById("lista-certificados");
+      lista.innerHTML = "";
+      certificados = [];
+      const querySnapshot = await getDocs(collection(db, "certificados"));
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        certificados.push({ id: docSnap.id, ...data });
+      });
+      renderizarCertificados(certificados);
+    }
+
+    function renderizarCertificados(array) {
+      const lista = document.getElementById("lista-certificados");
+      lista.innerHTML = "";
+      array.forEach(data => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <strong>${data.nome}</strong> - ${data.curso} - ${data.codigo} - ${data.data}
+          <button onclick="excluirCertificado('${data.id}')">🗑️</button>
+          <button onclick="gerarPDF('${data.nome}', '${data.curso}', '${data.codigo}', '${data.data}')">📄 PDF</button>
+        `;
+        div.className = "cert-box";
+        lista.appendChild(div);
+      });
+    }
+
+    window.excluirCertificado = async function(id) {
+      await deleteDoc(doc(db, "certificados", id));
+      alert("Certificado excluído.");
+      carregarCertificados();
+    }
+
+    window.cadastrarCertificado = async function() {
+      const nome = document.getElementById("nome").value;
+      const curso = document.getElementById("curso").value;
+      const codigo = document.getElementById("codigo").value;
+      const data = document.getElementById("data").value;
+      const empresa = document.getElementById("empresa").value;
+
+      if (!nome || !curso || !codigo || !data) {
+        alert("Preencha todos os campos obrigatórios.");
+        return;
+      }
+
+      await addDoc(collection(db, "certificados"), { nome, curso, codigo, data, empresa });
+      alert("Certificado cadastrado com sucesso!");
+      document.getElementById("form-certificado").reset();
+      carregarCertificados();
+    }
+
+    window.filtrar = function() {
+      const filtro = document.getElementById("busca").value.toLowerCase();
+      const filtrados = certificados.filter(c =>
+        c.nome.toLowerCase().includes(filtro) ||
+        c.curso.toLowerCase().includes(filtro) ||
+        c.codigo.toLowerCase().includes(filtro)
+      );
+      renderizarCertificados(filtrados);
+    }
+
+    window.gerarPDF = function(nome, curso, codigo, data) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text(`Certificado`, 10, 10);
+      doc.text(`Nome: ${nome}`, 10, 20);
+      doc.text(`Curso: ${curso}`, 10, 30);
+      doc.text(`Código: ${codigo}`, 10, 40);
+      doc.text(`Data: ${data}`, 10, 50);
+      doc.save(`certificado-${codigo}.pdf`);
+    }
+  </script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input, button { margin: 4px; padding: 6px; }
+    #lista-certificados .cert-box {
+      background: #f3f3f3;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🎓 Painel Completo PRO - Certificados</h2>
+
+  <h3>➕ Cadastrar Certificado</h3>
+  <form id="form-certificado" onsubmit="event.preventDefault(); cadastrarCertificado();">
+    <input id="nome" placeholder="Nome*" required />
+    <input id="curso" placeholder="Curso*" required />
+    <input id="codigo" placeholder="Código*" required />
+    <input type="date" id="data" required />
+    <input id="empresa" placeholder="Empresa" />
+    <button type="submit">Cadastrar</button>
+  </form>
+
+  <h3>🔍 Buscar</h3>
+  <input id="busca" oninput="filtrar()" placeholder="Buscar por nome, curso ou código" />
+
+  <h3>📋 Lista de Certificados</h3>
+  <div id="lista-certificados">Carregando...</div>
+</body>
+</html>
