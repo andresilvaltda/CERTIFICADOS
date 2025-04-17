@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificação de Certificado</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2C2DS3ljTaThKqE_HsNdMsZ-MCJJZSfg",
+      authDomain: "amplibot-b072c.firebaseapp.com",
+      projectId: "amplibot-b072c",
+      storageBucket: "amplibot-b072c.firebasestorage.app",
+      messagingSenderId: "996057926773",
+      appId: "1:996057926773:web:69685311faf3d4ece43c3c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.buscar = async function buscar() {
+      const codigo = document.getElementById("codigo").value.trim();
+      const resultado = document.getElementById("resultado");
+
+      if (!codigo) {
+        resultado.innerText = "Por favor, insira um código válido.";
+        resultado.style.color = "red";
+        return;
+      }
+
+      try {
+        const certificadosRef = collection(db, "certificados");
+        const q = query(certificadosRef, where("codigo", "==", codigo));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0].data();
+          resultado.innerHTML = `
+            ✅ <strong>Certificado encontrado!</strong><br/>
+            Nome: ${doc.nome}<br/>
+            Curso: ${doc.curso}<br/>
+            Data: ${doc.data}<br/>
+          `;
+          resultado.style.color = "green";
+        } else {
+          resultado.innerText = "❌ Certificado não encontrado.";
+          resultado.style.color = "red";
+        }
+      } catch (error) {
+        console.error("Erro ao buscar:", error);
+        resultado.innerText = "Erro na verificação. Tente novamente.";
+        resultado.style.color = "red";
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background-color: #d4f4f4;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input {
+      padding: 10px;
+      width: 80%;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔍 Consulta de Certificado</h2>
+    <input type="text" id="codigo" placeholder="Digite o código do certificado" />
+    <br />
+    <button onclick="buscar()">Verificar</button>
+    <p id="resultado"></p>
+  </div>
+</body>
+</html>
